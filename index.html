@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff7f8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="A gentle personal planner for daily life, research, wellness, family, and reflection.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Bloom — Life Planner</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--ink:#433b4a;--muted:#887e8e;--pink:#f5dce5;--lav:#e8e1f7;--mint:#e0eee5;--peach:#fae8d9;--blue:#e0edf5;--cream:#fffaf6;--white:#fff;--line:#eee5ec;--accent:#b56f8d;--shadow:0 8px 26px rgba(90,65,85,.07)}
+    *{box-sizing:border-box} body{margin:0;background:radial-gradient(ellipse at 92% 4%,rgba(246,210,221,.42),transparent 24%),radial-gradient(ellipse at 8% 15%,rgba(218,231,248,.55),transparent 27%),linear-gradient(180deg,#fff8fa 0%,#fbf8ff 48%,#fffaf5 100%);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);padding-bottom:88px}
+    button,input,textarea,select{font:inherit} button{cursor:pointer}
+    .app{max-width:760px;margin:0 auto;padding:env(safe-area-inset-top) 16px 24px}
+    header{display:flex;align-items:center;justify-content:space-between;padding:18px 2px 12px}
+    .brand{font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);font-weight:800}
+    h1{font-size:27px;line-height:1.15;margin:6px 0 4px;letter-spacing:-.04em} h2{font-size:18px;margin:0 0 12px} h3{font-size:14px;margin:0 0 8px}
+    .sub{font-size:13px;color:var(--muted)} .date{font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--line);padding:8px 10px;border-radius:14px}
+    .hero{background:linear-gradient(135deg,rgba(247,227,234,.96),rgba(238,231,251,.94) 65%,rgba(232,242,235,.96));border-radius:25px;padding:20px;box-shadow:var(--shadow);margin:8px 0 16px}
+    .hero .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#84657b;font-weight:800}
+    .hero textarea{width:100%;resize:vertical;min-height:54px;border:0;background:rgba(255,255,255,.55);border-radius:13px;padding:11px;color:var(--ink);outline:none;margin-top:10px}
+    .progressrow{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12px;color:#715b70}.progress{height:7px;background:rgba(255,255,255,.7);border-radius:99px;overflow:hidden;flex:1}.progress span{display:block;height:100%;width:0;background:#b77b9a;border-radius:99px;transition:width .2s}
+    .quickstats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:14px 0 20px}.stat{padding:13px 12px;border-radius:18px;background:#fff;border:1px solid var(--line)}.stat .n{font-size:20px;font-weight:800}.stat .l{font-size:11px;color:var(--muted);margin-top:3px}
+    .section{margin:18px 0}.sectionhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .pill{font-size:11px;color:var(--accent);background:#f8e8ef;border-radius:99px;padding:6px 9px;font-weight:700}
+    .card{background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:20px;padding:15px;box-shadow:var(--shadow);margin-bottom:10px}
+    .task{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f3edf2}.task:last-child{border-bottom:0}.task input[type=checkbox]{accent-color:#bb7e9d;width:18px;height:18px;margin-top:2px;flex-shrink:0}.task label{flex:1;font-size:14px;line-height:1.4}.task.done label{text-decoration:line-through;color:#aaa0ac}.task small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+    .addrow{display:flex;gap:8px;margin-top:10px}.addrow input,.field,textarea.field,select.field{width:100%;min-width:0;border:1px solid var(--line);border-radius:12px;background:#fff;padding:11px 12px;color:var(--ink);outline-color:#d7a7bd}.btn{border:0;border-radius:12px;padding:11px 14px;background:#b77b9a;color:#fff;font-weight:700;font-size:13px;white-space:nowrap}.btn.secondary{background:#f6e8ee;color:#8d5873}.btn.soft{background:#f0ebf8;color:#6d5d8d}
+    .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.tile{border-radius:19px;padding:15px;min-height:106px;border:1px solid rgba(100,80,100,.06);text-align:left;color:var(--ink)}.tile .emoji{font-size:22px}.tile strong{display:block;margin-top:8px;font-size:14px}.tile span{display:block;font-size:11px;color:#7f7485;margin-top:3px}.t-pink{background:#fae9ef}.t-lav{background:#eee9fa}.t-mint{background:#e7f2e9}.t-peach{background:#fff0e3}.t-blue{background:#e7f0f8}.t-cream{background:#fff5e9}
+    .view{display:none}.view.active{display:block}.back{background:transparent;border:0;color:var(--accent);font-weight:700;padding:0;margin:4px 0 14px}
+    .fieldgroup{margin:12px 0}.fieldgroup label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.fieldgroup textarea{min-height:90px;resize:vertical}
+    .entry{padding:11px 0;border-bottom:1px solid var(--line)}.entry:last-child{border:0}.entry strong{font-size:13px}.entry p{white-space:pre-wrap;font-size:13px;line-height:1.5;margin:5px 0;color:#6e6374}.entry .meta{font-size:11px;color:var(--muted)}
+    .bottomnav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,250,252,.94);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:8px max(8px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:flex-start;gap:2px;z-index:5;overflow-x:auto;scrollbar-width:none}.bottomnav::-webkit-scrollbar{display:none}
+    .navbtn{border:0;background:transparent;color:#928594;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:52px;flex-shrink:0;padding:5px 6px;border-radius:13px;font-size:10px}.navbtn .ico{font-size:19px}.navbtn.active{background:#f6e6ed;color:#9c5f7d;font-weight:800}
+    .notice{font-size:11px;color:var(--muted);line-height:1.5;margin:18px 3px}.empty{color:var(--muted);font-size:13px;padding:12px 0}.japan-banner{position:relative;overflow:hidden;border-radius:20px;padding:13px 16px;margin:0 0 14px;background:linear-gradient(115deg,#f4e7ed,#e9eef8 65%,#edf3e8);border:1px solid rgba(255,255,255,.8)}.japan-banner:after{content:"🌸";position:absolute;right:17px;top:8px;font-size:27px;opacity:.7}.japan-banner .jp{font-size:11px;letter-spacing:.15em;color:#9c7188}.quote{font-size:14px;line-height:1.55;font-weight:650;margin:6px 38px 4px 0}.quote-ref{font-size:11px;color:var(--muted)}.note-item{background:#fffafc;border:1px solid #f1e5ec;border-radius:13px;padding:11px;margin:8px 0}.note-item p{white-space:pre-wrap;margin:6px 0;font-size:13px;line-height:1.45}.note-item .meta{font-size:10px;color:var(--muted)}.dailygrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.dailygrid .fieldgroup{margin:6px 0}.dailygrid .fieldgroup label{font-size:11px}
+    @media(min-width:600px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}.app{padding-left:24px;padding-right:24px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div><div class="brand">✿ Bloom Planner</div><div class="sub">A little progress, every day.</div></div>
+    <div class="date" id="todayDate"></div>
+  </header>
+
+  <main id="homeView" class="view active">
+    <div class="japan-banner"><div class="jp">日本の小さな習慣 · LITTLE DAILY RITUALS</div><div class="quote" id="dailyQuote">“Be strong and courageous.”</div><div class="quote-ref" id="dailyQuoteRef">Joshua 1:9</div></div>
+    <div class="hero">
+      <div class="eyebrow">Today's intention</div>
+      <h1>Make space for what matters.</h1>
+      <textarea id="intention" placeholder="Today, I want to focus on…"></textarea>
+      <div class="progressrow"><span id="progressText">0 of 0 tasks complete</span><div class="progress"><span id="progressBar"></span></div></div>
+    </div>
+    <div class="quickstats">
+      <div class="stat"><div class="n" id="doneStat">0</div><div class="l">Tasks completed</div></div>
+      <div class="stat"><div class="n" id="walkStat">—</div><div class="l">Walk distance (km)</div></div>
+      <div class="stat"><div class="n" id="journalStat">0</div><div class="l">Journal entries</div></div>
+    </div>
+    <section class="section">
+      <div class="sectionhead"><h2>Today's priorities</h2><span class="pill" id="taskCount">0 tasks</span></div>
+      <div class="card"><div id="taskList"></div>
+        <div class="addrow"><input id="newTask" placeholder="Add a task…" maxlength="120"><button class="btn" id="addTaskBtn">Add</button></div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="sectionhead"><h2>Upcoming deadlines</h2><button class="btn secondary" data-open="deadlines">Manage</button></div>
+      <div class="card"><div id="homeDeadlinePreview"></div></div>
+    </section>
+    <section class="section">
+      <div class="sectionhead"><h2>Daily rhythm & little notes</h2><button class="btn secondary" data-open="daily">Open</button></div>
+      <div class="card"><div id="homeDailySummary" class="sub">Record today's weather, meals, and sleep times.</div><div class="addrow"><input id="quickNoteInput" placeholder="Quick note — capture it now…" maxlength="500"><button class="btn" id="quickNoteAdd">Save</button></div><div id="homeNotesPreview"></div><button class="btn soft" data-open="notes">All notes</button></div>
+    </section>
+    <section class="section">
+      <div class="sectionhead"><h2>Your planner spaces</h2><span class="sub">Choose a space</span></div>
+      <div class="tiles">
+        <button class="tile t-lav" data-open="research"><span class="emoji">🔬</span><strong>Research Studio</strong><span>Projects & milestones</span></button>
+        <button class="tile t-mint" data-open="walking"><span class="emoji">🌿</span><strong>Wellness & Walking</strong><span>Movement & mood</span></button>
+        <button class="tile t-peach" data-open="family"><span class="emoji">🏡</span><strong>Family & Home</strong><span>Meals & reminders</span></button>
+        <button class="tile t-pink" data-open="journal"><span class="emoji">📔</span><strong>Journal</strong><span>Reflect & recharge</span></button>
+        <button class="tile t-blue" data-open="calendar"><span class="emoji">🗓️</span><strong>Calendar</strong><span>Events & appointments</span></button>
+        <button class="tile t-pink" data-open="deadlines"><span class="emoji">⏳</span><strong>Deadlines</strong><span>Due dates & countdowns</span></button>
+        <button class="tile t-blue" data-open="daily"><span class="emoji">🌦️</span><strong>Daily Rhythm</strong><span>Weather, meals & sleep</span></button>
+        <button class="tile t-cream" data-open="notes"><span class="emoji">📝</span><strong>Quick Notes</strong><span>Thoughts to remember</span></button>
+        <button class="tile t-cream" data-open="stats"><span class="emoji">✨</span><strong>My Progress</strong><span>Small wins add up</span></button>
+      </div>
+    </section>
+    <p class="notice">Your planner is designed for gentle consistency, not perfection. Your entries are saved in this browser on this device. This starter version does not yet sync across devices or send notifications.</p>
+  </main>
+
+  <main id="researchView" class="view">
+    <button class="back" data-home>← Back to My Day</button><h1>Research Studio 🔬</h1><p class="sub">Move your research forward one small step at a time.</p>
+    <div class="card">
+      <div class="fieldgroup"><label>Project or manuscript</label><input class="field" id="researchProject" placeholder="e.g., Land-cover prediction manuscript"></div>
+      <div class="fieldgroup"><label>Next milestone</label><input class="field" id="researchMilestone" placeholder="e.g., Finish methods revision"></div>
+      <div class="fieldgroup"><label>Target date</label><input class="field" type="date" id="researchDate"></div>
+      <div class="fieldgroup"><label>Research notes / next actions</label><textarea class="field" id="researchNotes" placeholder="What is the next concrete step?"></textarea></div>
+      <button class="btn" id="saveResearch">Save research item</button>
+    </div>
+    <div class="card"><h2>Saved research items</h2><div id="researchEntries"></div></div>
+  </main>
+
+  <main id="walkingView" class="view">
+    <button class="back" data-home>← Back to My Day</button><h1>Wellness & Walking 🌿</h1><p class="sub">Notice how you feel, not just the numbers.</p>
+    <div class="card">
+      <div class="fieldgroup"><label>Date</label><input class="field" type="date" id="walkDate"></div>
+      <div class="fieldgroup"><label>Distance (km)</label><input class="field" type="number" id="walkDistance" min="0" step="0.01" placeholder="e.g., 3.2"></div>
+      <div class="fieldgroup"><label>Steps (optional)</label><input class="field" type="number" id="walkSteps" min="0" step="1" placeholder="e.g., 4300"></div>
+      <div class="fieldgroup"><label>Mood / observations</label><textarea class="field" id="walkMood" placeholder="Energy, weather, something beautiful you noticed…"></textarea></div>
+      <button class="btn" id="saveWalk">Save walk</button>
+    </div>
+    <div class="card"><h2>Recent walks</h2><div id="walkEntries"></div></div>
+  </main>
+
+  <main id="familyView" class="view">
+    <button class="back" data-home>← Back to My Day</button><h1>Family & Home 🏡</h1><p class="sub">Keep the practical things in one gentle place.</p>
+    <div class="card">
+      <div class="fieldgroup"><label>Category</label><select class="field" id="familyCategory"><option>Family activity</option><option>Daycare reminder</option><option>Meal plan</option><option>Shopping</option><option>Home task</option></select></div>
+      <div class="fieldgroup"><label>Item</label><input class="field" id="familyTitle" placeholder="e.g., Prepare daycare bag"></div>
+      <div class="fieldgroup"><label>Date (optional)</label><input class="field" type="date" id="familyDate"></div>
+      <div class="fieldgroup"><label>Notes (optional)</label><textarea class="field" id="familyNotes" placeholder="Details, ingredients, things to remember…"></textarea></div>
+      <button class="btn" id="saveFamily">Save item</button>
+    </div>
+    <div class="card"><h2>Family list</h2><div id="familyEntries"></div></div>
+  </main>
+
+  <main id="journalView" class="view">
+    <button class="back" data-home>← Back to My Day</button><h1>Journal 📔</h1><p class="sub">A few honest lines are enough.</p>
+    <div class="card">
+      <div class="fieldgroup"><label>Date</label><input class="field" type="date" id="journalDate"></div>
+      <div class="fieldgroup"><label>One thing I'm grateful for</label><textarea class="field" id="gratitude" placeholder="Today, I appreciate…"></textarea></div>
+      <div class="fieldgroup"><label>What did I learn or notice?</label><textarea class="field" id="reflection" placeholder="A thought, a discovery, a small win…"></textarea></div>
+      <div class="fieldgroup"><label>Tomorrow's gentle priority</label><input class="field" id="tomorrowPriority" placeholder="One thing that matters"></div>
+      <button class="btn" id="saveJournal">Save reflection</button>
+    </div>
+    <div class="card"><h2>Past reflections</h2><div id="journalEntries"></div></div>
+  </main>
+
+  <main id="calendarView" class="view">
+    <button class="back" data-home>← Back to My Day</button><h1>Calendar 🗓️</h1><p class="sub">Capture upcoming plans, appointments, and deadlines.</p>
+    <div class="card">
+      <div class="fieldgroup"><label>Event or deadline</label><input class="field" id="eventTitle" placeholder="e.g., Submit manuscript draft"></div>
+      <div class="fieldgroup"><label>Date</label><input class="field" type="date" id="eventDate"></div>
+      <div class="fieldgroup"><label>Time (optional)</label><input class="field" type="time" id="eventTime"></div>
+      <div class="fieldgroup"><label>Notes (optional)</label><textarea class="field" id="eventNotes" placeholder="Location, preparation, details…"></textarea></div>
+      <button class="btn" id="saveEvent">Add to planner</button>
+    </div>
+    <div class="card"><h2>Upcoming events</h2><div id="eventEntries"></div></div>
+  </main>
+
+  <main id="deadlinesView" class="view">
+    <button class="back" data-home>← Back to My Day</button><h1>Deadlines ⏳</h1><p class="sub">Know what is coming up, and give yourself time to prepare.</p>
+    <div class="quickstats">
+      <div class="stat"><div class="n" id="deadlineUpcomingCount">0</div><div class="l">Upcoming</div></div>
+      <div class="stat"><div class="n" id="deadlineTodayCount">0</div><div class="l">Due today</div></div>
+      <div class="stat"><div class="n" id="deadlineOverdueCount">0</div><div class="l">Overdue</div></div>
+    </div>
+    <div class="card"><h2>Add a deadline</h2>
+      <div class="fieldgroup"><label>Deadline title</label><input class="field" id="deadlineTitle" placeholder="e.g., Submit manuscript revision"></div>
+      <div class="fieldgroup"><label>Due date</label><input class="field" type="date" id="deadlineDate"></div>
+      <div class="fieldgroup"><label>Category</label><select class="field" id="deadlineCategory"><option>Research</option><option>Work</option><option>Family</option><option>Personal</option><option>Finance & admin</option><option>Other</option></select></div>
+      <div class="fieldgroup"><label>Priority</label><select class="field" id="deadlinePriority"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+      <div class="fieldgroup"><label>Notes / preparation steps (optional)</label><textarea class="field" id="deadlineNotes" placeholder="What needs to be done before this date?"></textarea></div>
+      <button class="btn" id="saveDeadline">Save deadline</button>
+    </div>
+    <div class="card"><div class="sectionhead"><h2>All deadlines</h2><span class="pill">Soonest first</span></div><div id="deadlineEntries"></div></div>
+  </main>
+
+  <main id="notesView" class="view">
+    <button class="back" data-home>← Back to My Day</button><h1>Quick Notes 📝</h1><p class="sub">A small space to catch a thought before it disappears.</p>
+    <div class="card"><div class="fieldgroup"><label>Write a quick note</label><textarea class="field" id="noteText" placeholder="An idea, reminder, question, or something to look up…"></textarea></div><button class="btn" id="saveNote">Save note</button></div>
+    <div class="card"><div class="sectionhead"><h2>Recent notes</h2><span class="pill" id="noteCount">0 notes</span></div><div id="noteEntries"></div></div>
+  </main>
+
+  <main id="dailyView" class="view">
+    <button class="back" data-home>← Back to My Day</button><h1>Daily Rhythm 🌦️</h1><p class="sub">Notice the little things that shape your day. Weather can be entered manually.</p>
+    <div class="card"><div class="fieldgroup"><label>Date</label><input class="field" type="date" id="dailyDate"></div>
+      <div class="dailygrid">
+        <div class="fieldgroup"><label>Weather</label><select class="field" id="dailyWeather"><option value="">Choose…</option><option>☀️ Sunny</option><option>🌤️ Partly cloudy</option><option>☁️ Cloudy</option><option>🌧️ Rainy</option><option>❄️ Snowy</option><option>🌬️ Windy</option><option>🌫️ Foggy</option><option>🌈 Other</option></select></div>
+        <div class="fieldgroup"><label>Temperature (°C, optional)</label><input class="field" type="number" id="dailyTemp" placeholder="e.g. 18"></div>
+        <div class="fieldgroup"><label>Wake-up time</label><input class="field" type="time" id="wakeTime"></div>
+        <div class="fieldgroup"><label>Bedtime</label><input class="field" type="time" id="bedTime"></div>
+      </div>
+      <div class="fieldgroup"><label>Food / meals today</label><textarea class="field" id="dailyFood" placeholder="Breakfast, lunch, dinner, snacks…"></textarea></div>
+      <div class="fieldgroup"><label>Water, energy, or wellbeing notes (optional)</label><textarea class="field" id="dailyWellbeing" placeholder="How did your day feel? Any small observations…"></textarea></div>
+      <button class="btn" id="saveDaily">Save daily log</button>
+    </div><div class="card"><h2>Past daily logs</h2><div id="dailyEntries"></div></div>
+  </main>
+
+  <main id="statsView" class="view">
+    <button class="back" data-home>← Back to My Day</button><h1>My Progress ✨</h1><p class="sub">Progress is information, not a judgement.</p>
+    <div class="quickstats">
+      <div class="stat"><div class="n" id="statsTasks">0</div><div class="l">Tasks completed</div></div>
+      <div class="stat"><div class="n" id="statsWalks">0</div><div class="l">Walks logged</div></div>
+      <div class="stat"><div class="n" id="statsDistance">0</div><div class="l">Total km logged</div></div>
+    </div>
+    <div class="card"><h2>Weekly snapshot</h2><div id="weeklySummary" class="empty">Add tasks, walks, and reflections to begin building your snapshot.</div></div>
+    <div class="card"><h2>Data & privacy</h2><p class="sub">Your planner is saved on this device. Export a backup regularly. Cloud sync is optional and requires your own Supabase project.</p><button class="btn secondary" id="exportData">Export my data</button> <button class="btn soft" id="importButton">Import backup</button><input id="importFile" type="file" accept="application/json" hidden></div>
+    <div class="card" id="cloudSyncCard"><h2>Private cloud sync ☁️</h2><p class="sub">Connect the same account on your PC and iPhone to keep your planner data together. Use only your Supabase Project URL and publishable/anon key here—never a service-role key.</p>
+      <div class="fieldgroup"><label for="supabaseUrl">Supabase Project URL</label><input class="field" id="supabaseUrl" placeholder="https://your-project.supabase.co" autocomplete="url"></div>
+      <div class="fieldgroup"><label for="supabaseKey">Supabase publishable / anon key</label><input class="field" id="supabaseKey" placeholder="sb_publishable_… or legacy anon key" autocomplete="off"></div>
+      <button class="btn secondary" id="saveCloudConfig">Save connection settings</button>
+      <div class="divider" style="height:1px;background:var(--line);margin:14px 0"></div>
+      <div class="fieldgroup"><label for="cloudEmail">Account email</label><input class="field" id="cloudEmail" type="email" placeholder="you@example.com" autocomplete="email"></div>
+      <div class="fieldgroup"><label for="cloudPassword">Password</label><input class="field" id="cloudPassword" type="password" placeholder="Choose a strong password" autocomplete="current-password"></div>
+      <div class="addrow"><button class="btn" id="cloudSignUp">Create account</button><button class="btn secondary" id="cloudSignIn">Sign in</button><button class="btn soft" id="cloudSignOut">Sign out</button></div>
+      <p id="cloudStatus" class="sub" role="status" aria-live="polite" style="margin-top:12px">Not connected. Your data remains on this device.</p>
+      <div class="addrow"><button class="btn" id="cloudUpload">Upload this device to cloud</button><button class="btn secondary" id="cloudDownload">Download cloud data</button></div>
+      <p class="sub" style="margin-top:10px">First device: export a backup, then sign in and choose Upload. Second device: sign in to the same account and choose Download. After that, edits sync automatically on each device when connected. Download replaces the current device's planner data.</p>
+    </div>
+  </main>
+</div>
+
+<nav class="bottomnav" aria-label="Main navigation">
+  <button class="navbtn active" data-nav="home"><span class="ico">☀️</span><span>My Day</span></button>
+  <button class="navbtn" data-nav="research"><span class="ico">🔬</span><span>Research</span></button>
+  <button class="navbtn" data-nav="walking"><span class="ico">🌿</span><span>Wellness</span></button>
+  <button class="navbtn" data-nav="family"><span class="ico">🏡</span><span>Family</span></button>
+  <button class="navbtn" data-nav="deadlines"><span class="ico">⏳</span><span>Deadlines</span></button>
+  <button class="navbtn" data-nav="journal"><span class="ico">📔</span><span>Journal</span></button>
+  <button class="navbtn" data-nav="notes"><span class="ico">📝</span><span>Notes</span></button>
+  <button class="navbtn" data-nav="daily"><span class="ico">🌦️</span><span>Daily</span></button>
+</nav>
+<script>
+(() => {
+  const KEY = 'bloomLifePlannerV1';
+  const today = () => new Date().toLocaleDateString('en-CA');
+  const dateLabel = () => new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  const fresh = () => ({tasks:[], intention:'', research:[], walks:[], family:[], journal:[], events:[], deadlines:[], notes:[], dailyLogs:[]});
+  let data = fresh();
+  try { data = {...fresh(), ...JSON.parse(localStorage.getItem(KEY) || '{}')}; } catch(e) {}
+  const $ = id => document.getElementById(id);
+  let cloudClient = null, cloudUser = null, syncEnabled = localStorage.getItem('bloomCloudSyncEnabled') === 'true', cloudSaveTimer = null;
+  const cloudConfig = () => { try { return JSON.parse(localStorage.getItem('bloomCloudConfig') || '{}'); } catch(e) { return {}; } };
+  const setCloudStatus = msg => { if ($('cloudStatus')) $('cloudStatus').textContent = msg; };
+  const setupCloudClient = () => {
+    const cfg = cloudConfig();
+    if (!cfg.url || !cfg.key || !window.supabase?.createClient) { cloudClient = null; return false; }
+    try { cloudClient = window.supabase.createClient(cfg.url, cfg.key); $('supabaseUrl').value = cfg.url; $('supabaseKey').value = cfg.key; return true; }
+    catch(e) { cloudClient = null; setCloudStatus('Could not read the connection settings. Check the URL and key.'); return false; }
+  };
+  const cloudPush = async () => {
+    if (!cloudClient || !cloudUser || !syncEnabled) return;
+    setCloudStatus('Syncing changes to your private cloud…');
+    const { error } = await cloudClient.from('bloom_data').upsert({user_id: cloudUser.id, payload: data, updated_at: new Date().toISOString()}, {onConflict:'user_id'});
+    if (error) setCloudStatus('Cloud sync failed: ' + error.message + '. Your latest edits are still saved on this device.');
+    else setCloudStatus('Connected as ' + cloudUser.email + ' · cloud sync is on.');
+  };
+  const scheduleCloudSync = () => { if (!cloudUser || !syncEnabled) return; clearTimeout(cloudSaveTimer); cloudSaveTimer = setTimeout(cloudPush, 900); };
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e) { alert('Could not save. Please check available browser storage.'); } renderAll(); scheduleCloudSync(); };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const dayNumber = dateString => {
+    if (!dateString) return null;
+    const parts = dateString.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+    const d = new Date(parts[0], parts[1]-1, parts[2]);
+    const now = new Date(); now.setHours(0,0,0,0);
+    return Math.round((d.getTime()-now.getTime())/86400000);
+  };
+  const deadlineStatus = d => {
+    if (d.done) return {label:'Completed', cls:'t-mint'};
+    const n = dayNumber(d.date);
+    if (n === null) return {label:'No date', cls:'t-blue'};
+    if (n < 0) return {label:`Overdue by ${Math.abs(n)} day${Math.abs(n)===1?'':'s'}`, cls:'t-pink'};
+    if (n === 0) return {label:'Due today', cls:'t-peach'};
+    if (n === 1) return {label:'Due tomorrow', cls:'t-peach'};
+    return {label:`In ${n} days`, cls:'t-mint'};
+  };
+  const empty = 'Nothing here yet. Add your first item above.';
+  const entryHTML = (arr, fields, removeKey) => arr.length ? [...arr].reverse().map(x => `<div class="entry"><div class="meta">${esc(x.date || '')}${x.time ? ' · '+esc(x.time):''}${x.category ? ' · '+esc(x.category):''}</div><strong>${esc(x.title || x.project || x.milestone || 'Entry')}</strong>${fields.map(k => x[k] ? `<p>${esc(x[k])}</p>` : '').join('')}<button class="btn secondary" data-remove="${esc(removeKey)}" data-id="${esc(x.id)}">Delete</button></div>`).join('') : `<div class="empty">${empty}</div>`;
+  function renderTasks() {
+    const el = $('taskList');
+    el.innerHTML = data.tasks.length ? data.tasks.map(t => `<div class="task ${t.done?'done':''}"><input type="checkbox" data-task="${esc(t.id)}" ${t.done?'checked':''} aria-label="Complete task"><label>${esc(t.title)}${t.date ? `<small>${esc(t.date)}</small>`:''}</label><button class="back" data-taskremove="${esc(t.id)}" aria-label="Delete task">×</button></div>`).join('') : `<div class="empty">Start with one small task for today.</div>`;
+    const done = data.tasks.filter(t=>t.done).length;
+    $('taskCount').textContent = `${data.tasks.length} task${data.tasks.length===1?'':'s'}`;
+    $('doneStat').textContent = done;
+    $('progressText').textContent = `${done} of ${data.tasks.length} tasks complete`;
+    $('progressBar').style.width = `${data.tasks.length ? done/data.tasks.length*100 : 0}%`;
+  }
+  function renderDeadlines() {
+    const all = data.deadlines || [];
+    const sorted = [...all].sort((a,b) => {
+      if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+      return (a.date || '9999-99-99').localeCompare(b.date || '9999-99-99');
+    });
+    const active = sorted.filter(d => !d.done);
+    $('deadlineUpcomingCount').textContent = active.filter(d => dayNumber(d.date) > 0).length;
+    $('deadlineTodayCount').textContent = active.filter(d => dayNumber(d.date) === 0).length;
+    $('deadlineOverdueCount').textContent = active.filter(d => dayNumber(d.date) !== null && dayNumber(d.date) < 0).length;
+    const card = d => {
+      const s = deadlineStatus(d);
+      return `<div class="entry"><div class="meta">${esc(d.category)} · ${esc(d.priority)} priority</div><strong>${esc(d.title)}</strong><p><span class="pill ${s.cls}">${esc(s.label)}</span> <span class="sub">${esc(d.date)}</span></p>${d.notes ? `<p>${esc(d.notes)}</p>` : ''}<div class="addrow"><button class="btn ${d.done?'secondary':'soft'}" data-deadline-toggle="${esc(d.id)}">${d.done?'Reopen':'Mark complete'}</button><button class="btn secondary" data-deadline-delete="${esc(d.id)}">Delete</button></div></div>`;
+    };
+    $('deadlineEntries').innerHTML = sorted.length ? sorted.map(card).join('') : `<div class="empty">No deadlines yet. Add one above to see its countdown here.</div>`;
+    $('homeDeadlinePreview').innerHTML = active.length ? active.slice(0,3).map(d => { const s=deadlineStatus(d); return `<div class="entry"><div class="meta">${esc(d.category)} · ${esc(d.date)}</div><strong>${esc(d.title)}</strong><p><span class="pill ${s.cls}">${esc(s.label)}</span></p></div>`; }).join('') : `<div class="empty">No upcoming deadlines. Add one whenever a date matters.</div>`;
+  }
+  const bibleMessages = [
+    ['“Be strong and courageous.”','Joshua 1:9'],
+    ['“The Lord is my shepherd.”','Psalm 23:1'],
+    ['“Let all that you do be done in love.”','1 Corinthians 16:14'],
+    ['“Do not be anxious about tomorrow.”','Matthew 6:34'],
+    ['“I can do all things through Christ who strengthens me.”','Philippians 4:13'],
+    ['“Be still, and know that I am God.”','Psalm 46:10'],
+    ['“Let us not grow weary in doing good.”','Galatians 6:9'],
+    ['“Trust in the Lord with all your heart.”','Proverbs 3:5'],
+    ['“The joy of the Lord is your strength.”','Nehemiah 8:10'],
+    ['“Give thanks in all circumstances.”','1 Thessalonians 5:18'],
+    ['“Those who hope in the Lord will renew their strength.”','Isaiah 40:31'],
+    ['“Peace I leave with you; my peace I give you.”','John 14:27']
+  ];
+  function renderNotes() {
+    const notes = [...(data.notes||[])].sort((a,b)=>(b.created||'').localeCompare(a.created||''));
+    $('noteCount').textContent = `${notes.length} note${notes.length===1?'':'s'}`;
+    const card = n => `<div class="note-item"><div class="meta">${esc(n.createdLabel||n.date||'')}</div><p>${esc(n.text)}</p><button class="btn secondary" data-note-delete="${esc(n.id)}">Delete</button></div>`;
+    $('noteEntries').innerHTML = notes.length ? notes.map(card).join('') : `<div class="empty">Your notes will appear here.</div>`;
+    $('homeNotesPreview').innerHTML = notes.length ? notes.slice(0,2).map(n=>`<div class="entry"><div class="meta">${esc(n.createdLabel||n.date||'')}</div><p>${esc(n.text)}</p></div>`).join('') : `<div class="empty">No quick notes yet.</div>`;
+  }
+  function loadDailyForm() {
+    const date = $('dailyDate').value || today();
+    const log = (data.dailyLogs||[]).find(x=>x.date===date) || {};
+    $('dailyWeather').value=log.weather||''; $('dailyTemp').value=log.temp??''; $('wakeTime').value=log.wake||''; $('bedTime').value=log.bed||''; $('dailyFood').value=log.food||''; $('dailyWellbeing').value=log.wellbeing||'';
+  }
+  function renderDaily() {
+    const logs=[...(data.dailyLogs||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    $('dailyEntries').innerHTML = logs.length ? logs.map(x=>`<div class="entry"><div class="meta">${esc(x.date)}${x.weather?' · '+esc(x.weather):''}${x.temp!==''&&x.temp!=null?' · '+esc(x.temp)+'°C':''}</div><strong>${x.wake?'Wake '+esc(x.wake):'Wake-up not recorded'}${x.bed?' · Bed '+esc(x.bed):''}</strong>${x.food?`<p><b>Food:</b> ${esc(x.food)}</p>`:''}${x.wellbeing?`<p>${esc(x.wellbeing)}</p>`:''}<button class="btn secondary" data-daily-edit="${esc(x.date)}">Edit this day</button> <button class="btn secondary" data-daily-delete="${esc(x.date)}">Delete</button></div>`).join('') : `<div class="empty">Your daily logs will appear here.</div>`;
+    const current=(data.dailyLogs||[]).find(x=>x.date===today());
+    $('homeDailySummary').textContent=current ? `${current.weather||'Weather not logged'}${current.temp!==''&&current.temp!=null?' · '+current.temp+'°C':''} · Wake ${current.wake||'—'} · Bed ${current.bed||'—'}${current.food?' · Meals recorded':''}` : 'Record today’s weather, meals, and sleep times.';
+  }
+  function renderAll() {
+    renderTasks();
+    renderDeadlines();
+    renderNotes();
+    renderDaily();
+    const quoteIndex = Math.floor((new Date(new Date().getFullYear(),0,0) < new Date() ? (new Date()-new Date(new Date().getFullYear(),0,0))/86400000 : 1)) % bibleMessages.length;
+    $('dailyQuote').textContent=bibleMessages[quoteIndex][0]; $('dailyQuoteRef').textContent=bibleMessages[quoteIndex][1];
+    $('intention').value = data.intention || '';
+    $('walkStat').textContent = data.walks.length ? data.walks.reduce((s,w)=>s+(Number(w.distance)||0),0).toFixed(1) : '—';
+    $('journalStat').textContent = data.journal.length;
+    $('researchEntries').innerHTML = entryHTML(data.research,['milestone','notes'],'research');
+    $('walkEntries').innerHTML = entryHTML(data.walks,['steps','mood'],'walks');
+    $('familyEntries').innerHTML = entryHTML(data.family,['notes'],'family');
+    $('journalEntries').innerHTML = entryHTML(data.journal,['gratitude','reflection','priority'],'journal');
+    $('eventEntries').innerHTML = entryHTML([...data.events].sort((a,b)=>(a.date||'').localeCompare(b.date||'')),['notes'],'events');
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-6); const cutoff=weekAgo.toLocaleDateString('en-CA');
+    const recentWalks=data.walks.filter(w=>w.date>=cutoff);
+    const recentJournal=data.journal.filter(j=>j.date>=cutoff);
+    $('statsTasks').textContent=data.tasks.filter(t=>t.done).length;
+    $('statsWalks').textContent=recentWalks.length;
+    $('statsDistance').textContent=recentWalks.reduce((s,w)=>s+(Number(w.distance)||0),0).toFixed(1);
+    $('weeklySummary').innerHTML = `<p>You logged <strong>${recentWalks.length}</strong> walk(s) totalling <strong>${recentWalks.reduce((s,w)=>s+(Number(w.distance)||0),0).toFixed(1)} km</strong> in the last 7 days.</p><p>You saved <strong>${recentJournal.length}</strong> reflection(s) in the last 7 days and completed <strong>${data.tasks.filter(t=>t.done).length}</strong> task(s) in your current list.</p><p class="sub">This is a simple snapshot, not a health measurement. Add a short note after each walk to notice what helps you feel good.</p>`;
+  }
+  function openView(name) {
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    const target = $(name+'View'); if(target) target.classList.add('active');
+    document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.nav===name));
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>openView(b.dataset.nav)));
+  document.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>openView(b.dataset.open)));
+  document.querySelectorAll('[data-home]').forEach(b=>b.addEventListener('click',()=>openView('home')));
+  $('todayDate').textContent = dateLabel();
+  ['walkDate','journalDate','dailyDate'].forEach(id=>$(id).value=today());
+  $('intention').addEventListener('input',e=>{data.intention=e.target.value; try{localStorage.setItem(KEY,JSON.stringify(data))}catch(err){} scheduleCloudSync();});
+  $('addTaskBtn').addEventListener('click',()=>{const title=$('newTask').value.trim();if(!title)return;data.tasks.push({id:uid(),title,done:false,date:today()});$('newTask').value='';save();});
+  $('newTask').addEventListener('keydown',e=>{if(e.key==='Enter')$('addTaskBtn').click()});
+  $('taskList').addEventListener('change',e=>{if(e.target.dataset.task){const t=data.tasks.find(t=>t.id===e.target.dataset.task);if(t)t.done=e.target.checked;save();}});
+  $('taskList').addEventListener('click',e=>{const id=e.target.dataset.taskremove;if(id){data.tasks=data.tasks.filter(t=>t.id!==id);save();}});
+  $('quickNoteAdd').addEventListener('click',()=>{const text=$('quickNoteInput').value.trim();if(!text)return;const now=new Date();data.notes=data.notes||[];data.notes.push({id:uid(),text,date:today(),created:now.toISOString(),createdLabel:now.toLocaleString()});$('quickNoteInput').value='';save();});
+  $('quickNoteInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('quickNoteAdd').click()});
+  $('saveNote').addEventListener('click',()=>{const text=$('noteText').value.trim();if(!text){alert('Write a note first.');return;}const now=new Date();data.notes=data.notes||[];data.notes.push({id:uid(),text,date:today(),created:now.toISOString(),createdLabel:now.toLocaleString()});$('noteText').value='';save();});
+  $('noteEntries').addEventListener('click',e=>{const b=e.target.closest('[data-note-delete]');if(!b)return;if(!confirm('Delete this note?'))return;data.notes=(data.notes||[]).filter(n=>n.id!==b.dataset.noteDelete);save();});
+  $('dailyDate').addEventListener('change',loadDailyForm);
+  $('saveDaily').addEventListener('click',()=>{const date=$('dailyDate').value||today();const log={date,weather:$('dailyWeather').value,temp:$('dailyTemp').value,wake:$('wakeTime').value,bed:$('bedTime').value,food:$('dailyFood').value.trim(),wellbeing:$('dailyWellbeing').value.trim()};data.dailyLogs=data.dailyLogs||[];const i=data.dailyLogs.findIndex(x=>x.date===date);if(i>=0)data.dailyLogs[i]=log;else data.dailyLogs.push(log);save();alert('Daily log saved.');});
+  $('dailyEntries').addEventListener('click',e=>{const edit=e.target.closest('[data-daily-edit]'), del=e.target.closest('[data-daily-delete]');if(edit){$('dailyDate').value=edit.dataset.dailyEdit;loadDailyForm();window.scrollTo({top:0,behavior:'smooth'});}if(del){if(!confirm('Delete this daily log?'))return;data.dailyLogs=(data.dailyLogs||[]).filter(x=>x.date!==del.dataset.dailyDelete);save();}});
+  $('saveResearch').addEventListener('click',()=>{const project=$('researchProject').value.trim(), milestone=$('researchMilestone').value.trim();if(!project&&!milestone){alert('Add a project or milestone first.');return;}data.research.push({id:uid(),project,title:project||milestone,milestone,date:$('researchDate').value,notes:$('researchNotes').value.trim()});['researchProject','researchMilestone','researchDate','researchNotes'].forEach(id=>$(id).value='');save();});
+  $('saveWalk').addEventListener('click',()=>{const distance=$('walkDistance').value;if(!distance){alert('Add your walk distance first.');return;}data.walks.push({id:uid(),title:`${Number(distance).toFixed(2)} km walk`,date:$('walkDate').value||today(),distance:Number(distance),steps:$('walkSteps').value,mood:$('walkMood').value.trim()});['walkDistance','walkSteps','walkMood'].forEach(id=>$(id).value='');$('walkDate').value=today();save();});
+  $('saveFamily').addEventListener('click',()=>{const title=$('familyTitle').value.trim();if(!title){alert('Add an item first.');return;}data.family.push({id:uid(),title,date:$('familyDate').value,category:$('familyCategory').value,notes:$('familyNotes').value.trim()});['familyTitle','familyDate','familyNotes'].forEach(id=>$(id).value='');save();});
+  $('saveJournal').addEventListener('click',()=>{const gratitude=$('gratitude').value.trim(), reflection=$('reflection').value.trim(), priority=$('tomorrowPriority').value.trim();if(!gratitude&&!reflection&&!priority){alert('Write at least one line before saving.');return;}data.journal.push({id:uid(),title:'Daily reflection',date:$('journalDate').value||today(),gratitude,reflection,priority});['gratitude','reflection','tomorrowPriority'].forEach(id=>$(id).value='');$('journalDate').value=today();save();});
+  $('saveDeadline').addEventListener('click',()=>{
+    const title=$('deadlineTitle').value.trim(), date=$('deadlineDate').value;
+    if(!title || !date){alert('Add a deadline title and due date.');return;}
+    data.deadlines=data.deadlines||[];
+    data.deadlines.push({id:uid(),title,date,category:$('deadlineCategory').value,priority:$('deadlinePriority').value,notes:$('deadlineNotes').value.trim(),done:false});
+    ['deadlineTitle','deadlineDate','deadlineNotes'].forEach(id=>$(id).value='');
+    $('deadlineCategory').value='Research'; $('deadlinePriority').value='Medium'; save();
+  });
+  $('deadlineEntries').addEventListener('click',e=>{
+    const toggle=e.target.closest('[data-deadline-toggle]'), del=e.target.closest('[data-deadline-delete]');
+    if(toggle){const item=(data.deadlines||[]).find(d=>d.id===toggle.dataset.deadlineToggle);if(item)item.done=!item.done;save();}
+    if(del){if(!confirm('Delete this deadline?'))return;data.deadlines=(data.deadlines||[]).filter(d=>d.id!==del.dataset.deadlineDelete);save();}
+  });
+  $('saveEvent').addEventListener('click',()=>{const title=$('eventTitle').value.trim();if(!title||!$('eventDate').value){alert('Add an event title and date.');return;}data.events.push({id:uid(),title,date:$('eventDate').value,time:$('eventTime').value,notes:$('eventNotes').value.trim()});['eventTitle','eventDate','eventTime','eventNotes'].forEach(id=>$(id).value='');save();});
+  document.body.addEventListener('click',e=>{const b=e.target.closest('[data-remove]');if(!b)return;const key=b.dataset.remove,id=b.dataset.id;if(!confirm('Delete this item?'))return;data[key]=data[key].filter(x=>x.id!==id);save();});
+  $('exportData').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`bloom-planner-backup-${today()}.json`;a.click();URL.revokeObjectURL(url);});
+  $('importButton').addEventListener('click',()=>$('importFile').click());
+  $('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const imported=JSON.parse(await f.text());if(!imported||typeof imported!=='object'||!Array.isArray(imported.tasks))throw new Error();if(!confirm('Import this backup and replace the current planner data?'))return;data={...fresh(),...imported};save();alert('Backup imported.');}catch(err){alert('This backup file could not be read.');}e.target.value='';});
+
+  $('saveCloudConfig').addEventListener('click',()=>{
+    const url=$('supabaseUrl').value.trim().replace(/\/$/,''), key=$('supabaseKey').value.trim();
+    if(!/^https:\/\/[a-zA-Z0-9.-]+$/.test(url) || !key){setCloudStatus('Enter a valid Supabase Project URL and publishable/anon key.');return;}
+    localStorage.setItem('bloomCloudConfig',JSON.stringify({url,key}));
+    if(setupCloudClient()) setCloudStatus('Connection settings saved on this device. Sign in or create your account.');
+  });
+  $('cloudSignUp').addEventListener('click',async()=>{
+    if(!cloudClient){setCloudStatus('Save your Supabase connection settings first.');return;}
+    const email=$('cloudEmail').value.trim(), password=$('cloudPassword').value;
+    if(!email||password.length<8){setCloudStatus('Enter your email and a password of at least 8 characters.');return;}
+    setCloudStatus('Creating account…'); const {data:res,error}=await cloudClient.auth.signUp({email,password});
+    if(error){setCloudStatus('Could not create account: '+error.message);return;}
+    if(res.session){cloudUser=res.user;setCloudStatus('Account created and signed in as '+email+'.');}
+    else setCloudStatus('Account created. Check your email for a confirmation link, then sign in here.');
+  });
+  $('cloudSignIn').addEventListener('click',async()=>{
+    if(!cloudClient){setCloudStatus('Save your Supabase connection settings first.');return;}
+    const email=$('cloudEmail').value.trim(), password=$('cloudPassword').value;
+    if(!email||!password){setCloudStatus('Enter your account email and password.');return;}
+    setCloudStatus('Signing in…'); const {data:res,error}=await cloudClient.auth.signInWithPassword({email,password});
+    if(error){setCloudStatus('Sign-in failed: '+error.message);return;}
+    cloudUser=res.user; setCloudStatus('Signed in as '+email+'. Choose Upload on your first device or Download on your second device.');
+  });
+  $('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();cloudUser=null;syncEnabled=false;localStorage.setItem('bloomCloudSyncEnabled','false');setCloudStatus('Signed out. Your local data remains on this device.');});
+  $('cloudUpload').addEventListener('click',async()=>{
+    if(!cloudClient||!cloudUser){setCloudStatus('Save connection settings and sign in first.');return;}
+    if(!confirm('Upload this device’s planner data to your cloud account? This will replace the cloud copy. Export a backup first.'))return;
+    const {error}=await cloudClient.from('bloom_data').upsert({user_id:cloudUser.id,payload:data,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+    if(error){setCloudStatus('Upload failed: '+error.message);return;}
+    syncEnabled=true;localStorage.setItem('bloomCloudSyncEnabled','true');setCloudStatus('Upload complete. Automatic cloud sync is now enabled on this device.');
+  });
+  $('cloudDownload').addEventListener('click',async()=>{
+    if(!cloudClient||!cloudUser){setCloudStatus('Save connection settings and sign in first.');return;}
+    if(!confirm('Download cloud data and replace all planner data on this device? Export a backup first if you need to keep this device’s current entries.'))return;
+    setCloudStatus('Downloading cloud data…');
+    const {data:row,error}=await cloudClient.from('bloom_data').select('payload,updated_at').eq('user_id',cloudUser.id).maybeSingle();
+    if(error){setCloudStatus('Download failed: '+error.message);return;}
+    if(!row){setCloudStatus('No cloud backup exists yet. On your first device, choose Upload this device to cloud.');return;}
+    data={...fresh(),...row.payload};
+    try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}
+    syncEnabled=true;localStorage.setItem('bloomCloudSyncEnabled','true');renderAll();
+    setCloudStatus('Cloud data downloaded ('+new Date(row.updated_at).toLocaleString()+'). Automatic cloud sync is now enabled.');
+  });
+  if (setupCloudClient()) {
+    cloudClient.auth.getSession().then(({data:res})=>{if(res?.session){cloudUser=res.session.user;setCloudStatus('Signed in as '+cloudUser.email+(syncEnabled?' · cloud sync is on.':' · sign in is active; choose Upload or Download to start syncing.'));}else setCloudStatus('Connection settings loaded. Sign in to begin.');});
+  } else setCloudStatus('Not configured. Create a Supabase project, then enter its URL and publishable/anon key here.');
+  renderAll();
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
